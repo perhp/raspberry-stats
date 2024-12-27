@@ -14,18 +14,6 @@ function getCPUTemperature(callback) {
     });
 }
 
-function getCPUTemperatureAsync() {
-    return new Promise((resolve, reject) => {
-        getCPUTemperature((temp) => {
-            if (temp === null) {
-                reject(new Error("Failed to read temperature"))
-            }
-
-            resolve(temp);
-        });
-    });
-}
-
 function getMemoryUsage(callback) {
     const cmd = spawn("free");
 
@@ -38,18 +26,6 @@ function getMemoryUsage(callback) {
     
     cmd.stderr.once("data", () => {
         callback(null);
-    });
-}
-
-function getMemoryUsageAsync() {
-    return new Promise((resolve, reject) => {
-        getMemoryUsage((usage) => {
-            if (usage === null) {
-                reject(new Error("Failed to read memory usage"))
-            }
-
-            resolve(usage);
-        });
     });
 }
 
@@ -76,23 +52,23 @@ function getDiskUsage(callback) {
     });
 }
 
-function getDiskUsageAsync() {
-    return new Promise((resolve, reject) => {
-        getDiskUsage((usage) => {
-            if (usage === null) {
-                reject(new Error("Failed to read disk usage"))
+function asynchronize(candidate, errorMessage) {
+    return () => new Promise((resolve, reject) => {
+        candidate(value => {
+            if (value === null) {
+                reject(new Error(errorMessage));
             }
 
-            resolve(usage);
-        });
-    });
+            resolve(value);
+        })
+    })
 }
 
 module.exports = {
     getCPUTemperature,
-    getCPUTemperatureAsync,
+    getCPUTemperatureAsync: asynchronize(getCPUTemperature, "Failed to read CPU temperature"),
     getMemoryUsage,
-    getMemoryUsageAsync,
+    getMemoryUsageAsync: asynchronize(getMemoryUsage, "Failed to read memory usage"),
     getDiskUsage,
-    getDiskUsageAsync,
+    getDiskUsageAsync: asynchronize(getDiskUsage, "Failed to read disk usage"),
 }
