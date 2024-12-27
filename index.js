@@ -103,12 +103,12 @@ function getClockFrequency(callback) {
   let results = [];
   let pending = clocks.length;
 
-  for (const clock in clocks) {
+  for (const clock of clocks) {
     const cmd = spawn("/usr/bin/vcgencmd", ["measure_clock", clock]);
 
     cmd.stdout.once("data", (data) => {
       const match = data.toString("utf8").match(/frequency\(\d+\)=(\d+)/);
-      const frequency = match ? parseInt(match[1], 10) : 0;
+      const frequency = match ? parseInt(match[1]) : 0;
 
       results.push({ clock, frequency });
     });
