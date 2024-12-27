@@ -1,0 +1,11 @@
+{
+  "name": "raspberry-stats",
+  "version": "1.0.0",
+  "description": "Get your raspberry pi's stats.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Per Hansen",
+  "license": "ISC"
+}
