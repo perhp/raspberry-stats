@@ -70,6 +70,20 @@ function getDiskUsage(callback) {
   });
 }
 
+function getVoltage(callback) {
+  const regex = /volt=([^V]+)/;
+  const cmd = spawn("/usr/bin/vcgencmd", ["measure_volts"]);
+
+  cmd.stdout.once("data", (data) => {
+    const match = data.toString("utf8").match(regex);
+    callback(match ? parseFloat(match[1]) : null);
+  });
+
+  cmd.stderr.once("data", () => {
+    callback(null);
+  });
+}
+
 function asynchronize(candidate, errorMessage) {
   return () =>
     new Promise((resolve, reject) => {
@@ -96,4 +110,6 @@ module.exports = {
   ),
   getDiskUsage,
   getDiskUsageAsync: asynchronize(getDiskUsage, "Failed to read disk usage"),
+  getVoltage,
+  getVoltageAsync: asynchronize(getVoltage, "Failed to read voltage"),
 };
