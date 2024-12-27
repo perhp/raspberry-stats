@@ -1,4 +1,4 @@
-# Raspberry Pi System Info
+# Raspberry Stats
 
 A Node.js module for retrieving system information from a Raspberry Pi.  
 It uses the `child_process.spawn` command to read various parameters, including CPU temperature, memory usage, disk usage, voltage, and clock frequencies.  
@@ -10,7 +10,7 @@ Synchronous (callback-based) and asynchronous (promise-based) APIs are provided 
 
 ## Table of Contents
 
-- [Raspberry Pi System Info](#raspberry-pi-system-info)
+- [Raspberry Stats](#raspberry-stats)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -27,9 +27,21 @@ Synchronous (callback-based) and asynchronous (promise-based) APIs are provided 
 
 ## Installation
 
-Install via [npm](https://www.npmjs.com/):
+With [npm](https://www.npmjs.com/):
 
     npm install raspberry-stats
+
+With [yarn](https://yarnpkg.com/):
+
+    yarn add raspberry-stats
+
+With [pnpm](https://pnpm.io/):
+
+    pnpm add raspberry-stats
+
+With [bun](https://bun.sh/):
+
+    bun add raspberry-stats
 
 ---
 
@@ -37,54 +49,56 @@ Install via [npm](https://www.npmjs.com/):
 
 Example using both callback-based and async/await methods:
 
-    const {
-      getCPUTemperature,
-      getCPUTemperatureAsync,
-      getMemoryUsage,
-      getMemoryUsageAsync,
-      getDiskUsage,
-      getDiskUsageAsync,
-      getVoltage,
-      getVoltageAsync,
-      getClockFrequency,
-      getClockFrequencyAsync
-    } = require('your-package-name');
+```javascript
+const {
+  getCPUTemperature,
+  getCPUTemperatureAsync,
+  getMemoryUsage,
+  getMemoryUsageAsync,
+  getDiskUsage,
+  getDiskUsageAsync,
+  getVoltage,
+  getVoltageAsync,
+  getClockFrequency,
+  getClockFrequencyAsync,
+} = require("your-package-name");
 
-    // --- Using callback-based methods ---
+// --- Using callback-based methods ---
 
+// Example 1: CPU Temperature
+getCPUTemperature((temp) => {
+  if (temp !== null) {
+    console.log(`CPU Temperature: ${temp}°C`);
+  } else {
+    console.error("Failed to retrieve CPU temperature");
+  }
+});
+
+// Example 2: Memory Usage
+getMemoryUsage((usage) => {
+  if (usage !== null) {
+    console.log("Memory usage:", usage);
+  } else {
+    console.error("Failed to retrieve memory usage");
+  }
+});
+
+// --- Using promise-based methods (Async/Await) ---
+
+(async () => {
+  try {
     // Example 1: CPU Temperature
-    getCPUTemperature((temp) => {
-      if (temp !== null) {
-        console.log(`CPU Temperature: ${temp}°C`);
-      } else {
-        console.error('Failed to retrieve CPU temperature');
-      }
-    });
+    const temp = await getCPUTemperatureAsync();
+    console.log(`CPU Temperature: ${temp}°C`);
 
     // Example 2: Memory Usage
-    getMemoryUsage((usage) => {
-      if (usage !== null) {
-        console.log('Memory usage:', usage);
-      } else {
-        console.error('Failed to retrieve memory usage');
-      }
-    });
-
-    // --- Using promise-based methods (Async/Await) ---
-
-    (async () => {
-      try {
-        // Example 1: CPU Temperature
-        const temp = await getCPUTemperatureAsync();
-        console.log(`CPU Temperature: ${temp}°C`);
-
-        // Example 2: Memory Usage
-        const memUsage = await getMemoryUsageAsync();
-        console.log('Memory usage:', memUsage);
-      } catch (error) {
-        console.error(error.message);
-      }
-    })();
+    const memUsage = await getMemoryUsageAsync();
+    console.log("Memory usage:", memUsage);
+  } catch (error) {
+    console.error(error.message);
+  }
+})();
+```
 
 ---
 
@@ -116,14 +130,16 @@ Example using both callback-based and async/await methods:
 
 Where `MemoryUsage` is an object of the following shape:
 
-    interface MemoryUsage {
-      total: number;
-      used: number;
-      free: number;
-      shared: number;
-      buffCache: number;
-      available: number;
-    }
+```typescript
+interface MemoryUsage {
+  total: number;
+  used: number;
+  free: number;
+  shared: number;
+  buffCache: number;
+  available: number;
+}
+```
 
 - **description**  
   Reads memory usage via the `free` command.
@@ -146,14 +162,16 @@ Where `MemoryUsage` is an object of the following shape:
 
 Where `DiskUsage` is an object of the following shape:
 
-    interface DiskUsage {
-      filesystem: string;
-      oneKBlocks: number;
-      used: number;
-      available: number;
-      usePercentage: number;
-      mountedOn: string;
-    }
+```typescript
+interface DiskUsage {
+  filesystem: string;
+  oneKBlocks: number;
+  used: number;
+  available: number;
+  usePercentage: number;
+  mountedOn: string;
+}
+```
 
 - **description**  
   Reads disk usage info via the `df` command.
@@ -195,10 +213,12 @@ Where `DiskUsage` is an object of the following shape:
 
 Where `ClockFrequency` is an object of the following shape:
 
-    interface ClockFrequency {
-      clock: string;
-      frequency: number; // in Hz
-    }
+```typescript
+interface ClockFrequency {
+  clock: string;
+  frequency: number; // in Hz
+}
+```
 
 - **description**  
   Reads multiple clock frequencies (arm, core, h264, etc.) by running `vcgencmd measure_clock`.
@@ -221,17 +241,19 @@ For the async/await methods, an `Error` is thrown with a descriptive message.
 
 **Example**:
 
-    try {
-      const temp = await getCPUTemperatureAsync();
-      console.log(`CPU Temperature: ${temp}°C`);
-    } catch (error) {
-      console.error(error.message); // => "Failed to read CPU temperature"
-    }
+```javascript
+try {
+  const temp = await getCPUTemperatureAsync();
+  console.log(`CPU Temperature: ${temp}°C`);
+} catch (error) {
+  console.error(error.message); // => "Failed to read CPU temperature"
+}
+```
 
 ---
 
 ## License
 
-[MIT](https://opensource.org/licenses/MIT)
+[ISC](https://opensource.org/licenses/ISC)
 
 Feel free to open issues, PRs, or contribute in any way you see fit!

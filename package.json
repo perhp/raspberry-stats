@@ -1,6 +1,6 @@
 {
   "name": "raspberry-stats",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A lightweight Node.js utility for gathering essential performance metrics from your Raspberry Pi—such as CPU temperature, memory usage, and more.",
   "main": "index.js",
   "scripts": {
