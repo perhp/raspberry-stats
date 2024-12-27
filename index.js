@@ -84,6 +84,48 @@ function getVoltage(callback) {
   });
 }
 
+function getClockFrequency(callback) {
+  const clocks = [
+    "arm",
+    "core",
+    "h264",
+    "isp",
+    "v3d",
+    "uart",
+    "pwm",
+    "emmc",
+    "pixel",
+    "vec",
+    "hdmi",
+    "dpi",
+  ];
+
+  let results = [];
+  let pending = clocks.length;
+
+  for (const clock in clocks) {
+    const cmd = spawn("/usr/bin/vcgencmd", ["measure_clock", clock]);
+
+    cmd.stdout.once("data", (data) => {
+      const match = data.toString("utf8").match(/frequency\(\d+\)=(\d+)/);
+      const frequency = match ? parseInt(match[1], 10) : 0;
+
+      results.push({ clock, frequency });
+    });
+
+    cmd.stderr.once("data", () => {
+      results.push({ clock, frequency: null });
+    });
+
+    cmd.on("close", () => {
+      pending--;
+      if (pending === 0) {
+        callback(results);
+      }
+    });
+  }
+}
+
 function asynchronize(candidate, errorMessage) {
   return () =>
     new Promise((resolve, reject) => {
@@ -112,4 +154,9 @@ module.exports = {
   getDiskUsageAsync: asynchronize(getDiskUsage, "Failed to read disk usage"),
   getVoltage,
   getVoltageAsync: asynchronize(getVoltage, "Failed to read voltage"),
+  getClockFrequency,
+  getClockFrequencyAsync: asynchronize(
+    getClockFrequency,
+    "Failed to read clock frequencies",
+  ),
 };
