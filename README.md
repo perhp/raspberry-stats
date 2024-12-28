@@ -19,6 +19,7 @@ Synchronous (callback-based) and asynchronous (promise-based) APIs are provided 
     - [getMemoryUsage / getMemoryUsageAsync](#getmemoryusage--getmemoryusageasync)
     - [getDiskUsage / getDiskUsageAsync](#getdiskusage--getdiskusageasync)
     - [getVoltage / getVoltageAsync](#getvoltage--getvoltageasync)
+    - [getClockFrequencies / getClockFrequenciesAsync](#getclockfrequencies--getclockfrequenciesasync)
     - [getClockFrequency / getClockFrequencyAsync](#getclockfrequency--getclockfrequencyasync)
   - [Error Handling](#error-handling)
   - [License](#license)
@@ -55,29 +56,23 @@ const {
   getCPUTemperatureAsync,
   getMemoryUsage,
   getMemoryUsageAsync,
-  getDiskUsage,
-  getDiskUsageAsync,
-  getVoltage,
-  getVoltageAsync,
-  getClockFrequency,
-  getClockFrequencyAsync,
-} = require("your-package-name");
+} = require("raspberry-stats");
 
 // --- Using callback-based methods ---
 
 // Example 1: CPU Temperature
-getCPUTemperature((temp) => {
+getCPUTemperature((temperature) => {
   if (temp !== null) {
-    console.log(`CPU Temperature: ${temp}°C`);
+    console.log(`CPU Temperature: ${temperature}°C`);
   } else {
     console.error("Failed to retrieve CPU temperature");
   }
 });
 
 // Example 2: Memory Usage
-getMemoryUsage((usage) => {
-  if (usage !== null) {
-    console.log("Memory usage:", usage);
+getMemoryUsage((memoryUsage) => {
+  if (memoryUsage !== null) {
+    console.log("Memory usage:", memoryUsage);
   } else {
     console.error("Failed to retrieve memory usage");
   }
@@ -88,12 +83,12 @@ getMemoryUsage((usage) => {
 (async () => {
   try {
     // Example 1: CPU Temperature
-    const temp = await getCPUTemperatureAsync();
-    console.log(`CPU Temperature: ${temp}°C`);
+    const temperature = await getCPUTemperatureAsync();
+    console.log(`CPU Temperature: ${temperature}°C`);
 
     // Example 2: Memory Usage
-    const memUsage = await getMemoryUsageAsync();
-    console.log("Memory usage:", memUsage);
+    const memoryUsage = await getMemoryUsageAsync();
+    console.log("Memory usage:", memoryUsage);
   } catch (error) {
     console.error(error.message);
   }
@@ -206,10 +201,10 @@ interface DiskUsage {
 
 ---
 
-### getClockFrequency / getClockFrequencyAsync
+### getClockFrequencies / getClockFrequenciesAsync
 
 **Signature (Callback):**  
-`getClockFrequency(callback: (frequencies: ClockFrequency[] | null) => void): void;`
+`getClockFrequencies(callback: (frequencies: ClockFrequency[] | null) => void): void;`
 
 Where `ClockFrequency` is an object of the following shape:
 
@@ -226,11 +221,49 @@ interface ClockFrequency {
   Called with an array of clock/frequency objects or `null` if an error occurred.
 
 **Signature (Async):**  
-`getClockFrequencyAsync(): Promise<ClockFrequency[]>;`
+`getClockFrequenciesAsync(): Promise<ClockFrequency[]>;`
 
 - **description**  
   Asynchronous/promise-based version of the above function.  
   Resolves with an array of clock/frequency objects, or rejects if an error occurred.
+
+---
+
+### getClockFrequency / getClockFrequencyAsync
+
+**Signature (Callback):**  
+`getClockFrequency(clock: Clock, callback: (frequency: number | null) => void): void;`
+
+Where `Clock` is one of the following strings:
+
+```typescript
+enum Clock {
+  ARM = "arm",
+  CORE = "core",
+  H264 = "h264",
+  ISP = "isp",
+  V3D = "v3d",
+  UART = "uart",
+  PWM = "pwm",
+  EMMC = "emmc",
+  PIXEL = "pixel",
+  VEC = "vec",
+  HDMI = "hdmi",
+  DPI = "dpi",
+}
+```
+
+- **description**  
+  Reads the specified clock frequency by running `vcgencmd measure_clock`.
+- **callback**  
+  Called with the frequency or `null` if an error occurred.
+
+**Signature (Async):**  
+`getClockFrequencyAsync(): Promise<number>;`
+
+- **description**  
+  Asynchronous/promise-based version of the above function.  
+  Resolves with the frequency, or rejects if an error occurred.
 
 ---
 

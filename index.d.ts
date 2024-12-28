@@ -93,12 +93,42 @@ export function getVoltageAsync(): Promise<number>;
  * Reads multiple clock frequencies (arm, core, h264, etc.) by running `vcgencmd measure_clock`.
  * @param callback Callback with an array of `ClockFrequency` objects, or `null` on error.
  */
-export function getClockFrequency(
+export function getClockFrequencies(
   callback: (frequencies: ClockFrequency[] | null) => void,
 ): void;
 
 /**
- * Asynchronous version of `getClockFrequency`.
+ * Asynchronous version of `getClockFrequencies`.
  * @returns A Promise that resolves with an array of `ClockFrequency` objects, or rejects on error.
  */
-export function getClockFrequencyAsync(): Promise<ClockFrequency[]>;
+export function getClockFrequenciesAsync(): Promise<ClockFrequency[]>;
+
+export enum Clock {
+  ARM = "arm",
+  CORE = "core",
+  H264 = "h264",
+  ISP = "isp",
+  V3D = "v3d",
+  UART = "uart",
+  PWM = "pwm",
+  EMMC = "emmc",
+  PIXEL = "pixel",
+  VEC = "vec",
+  HDMI = "hdmi",
+  DPI = "dpi",
+}
+
+/**
+ * Reads the specified clock frequency by running `vcgencmd measure_clock`.
+ * @param callback Callback with the frequency, or `null` on error.
+ */
+export function getClockFrequency(
+  clock: Clock,
+  callback: (frequency: number | null) => void,
+): void;
+
+/**
+ * Asynchronous version of `getClockFrequency`
+ * @returns A Promise that resolves with the frequency, or rejects on error.
+ */
+export function getClockFrequencyAsync(clock: Clock): Promise<number | null>;

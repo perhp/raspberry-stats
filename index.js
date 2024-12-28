@@ -84,7 +84,7 @@ function getVoltage(callback) {
   });
 }
 
-function getClockFrequency(callback) {
+function getClockFrequencies(callback) {
   const clocks = [
     "arm",
     "core",
@@ -126,10 +126,25 @@ function getClockFrequency(callback) {
   }
 }
 
+function getClockFrequency(clock, callback) {
+  const cmd = spawn("/usr/bin/vcgencmd", ["measure_clock", clock]);
+
+  cmd.stdout.once("data", (data) => {
+    const match = data.toString("utf8").match(/frequency\(\d+\)=(\d+)/);
+    const frequency = match ? parseInt(match[1]) : 0;
+
+    callback(frequency);
+  });
+
+  cmd.stderr.once("data", () => {
+    callback(null);
+  });
+}
+
 function asynchronize(candidate, errorMessage) {
-  return () =>
+  return (...args) =>
     new Promise((resolve, reject) => {
-      candidate((value) => {
+      candidate(...args, (value) => {
         if (value === null) {
           reject(new Error(errorMessage));
         }
@@ -154,9 +169,14 @@ module.exports = {
   getDiskUsageAsync: asynchronize(getDiskUsage, "Failed to read disk usage"),
   getVoltage,
   getVoltageAsync: asynchronize(getVoltage, "Failed to read voltage"),
+  getClockFrequencies,
+  getClockFrequenciesAsync: asynchronize(
+    getClockFrequencies,
+    "Failed to read clock frequencies",
+  ),
   getClockFrequency,
   getClockFrequencyAsync: asynchronize(
     getClockFrequency,
-    "Failed to read clock frequencies",
+    "Failed to read clock frequency",
   ),
 };
