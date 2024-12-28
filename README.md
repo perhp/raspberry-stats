@@ -21,6 +21,7 @@ Synchronous (callback-based) and asynchronous (promise-based) APIs are provided 
     - [getVoltage / getVoltageAsync](#getvoltage--getvoltageasync)
     - [getClockFrequencies / getClockFrequenciesAsync](#getclockfrequencies--getclockfrequenciesasync)
     - [getClockFrequency / getClockFrequencyAsync](#getclockfrequency--getclockfrequencyasync)
+    - [getCPUUsage / getCPUUsageAsync](#getcpuusage--getcpuusageasync)
   - [Error Handling](#error-handling)
   - [License](#license)
 
@@ -50,7 +51,7 @@ With [bun](https://bun.sh/):
 
 Example using both callback-based and async/await methods:
 
-```javascript
+```js
 const {
   getCPUTemperature,
   getCPUTemperatureAsync,
@@ -125,7 +126,7 @@ getMemoryUsage((memoryUsage) => {
 
 Where `MemoryUsage` is an object of the following shape:
 
-```typescript
+```ts
 interface MemoryUsage {
   total: number;
   used: number;
@@ -157,7 +158,7 @@ interface MemoryUsage {
 
 Where `DiskUsage` is an object of the following shape:
 
-```typescript
+```ts
 interface DiskUsage {
   filesystem: string;
   oneKBlocks: number;
@@ -208,7 +209,7 @@ interface DiskUsage {
 
 Where `ClockFrequency` is an object of the following shape:
 
-```typescript
+```ts
 interface ClockFrequency {
   clock: string;
   frequency: number; // in Hz
@@ -236,7 +237,7 @@ interface ClockFrequency {
 
 Where `Clock` is one of the following strings:
 
-```typescript
+```ts
 enum Clock {
   ARM = "arm",
   CORE = "core",
@@ -267,6 +268,25 @@ enum Clock {
 
 ---
 
+### getCPUUsage / getCPUUsageAsync
+
+**Signature (Callback):**  
+`getCPUUsage(callback: (usage: number | null) => void): void;`
+
+- **description**  
+  Runs `top` repeatedly (in this example, 10 iterations at 0.1-second intervals) and gathers the CPU usage values. It uses `grep` and `awk` to parse the CPU usage, calculates an average from the collected samples, and then invokes the callback with the final usage percentage (e.g., 17.2 for ~17.2% usage). If an error occurs, it invokes the callback with `null`.
+- **callback**  
+  Called with the CPU usage or `null` if an error occurred.
+
+**Signature (Async):**  
+`getCPUUsageAsync(): Promise<number>;`
+
+- **description**  
+  Asynchronous/promise-based version of the above function.  
+  Resolves with the CPU usage, or rejects if an error occurred.
+
+---
+
 ## Error Handling
 
 For the callback-based methods, if an error occurs, the callback is passed `null`.  
@@ -274,7 +294,7 @@ For the async/await methods, an `Error` is thrown with a descriptive message.
 
 **Example**:
 
-```javascript
+```js
 try {
   const temp = await getCPUTemperatureAsync();
   console.log(`CPU Temperature: ${temp}°C`);

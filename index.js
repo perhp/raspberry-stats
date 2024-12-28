@@ -141,6 +141,32 @@ function getClockFrequency(clock, callback) {
   });
 }
 
+function getCPUUsage(callback) {
+  const cmd = spawn("bash", [
+    "-c",
+    `top -bn10 -d 0.1 | grep "Cpu(s)" | awk '{ print 100 - $8 }'`,
+  ]);
+
+  cmd.stdout.once("data", (data) => {
+    const usage = data
+      .toString("utf8")
+      .split("\n")
+      .filter(Boolean)
+      .reduce((acc, curr, index, original) => {
+        const parsedCurrent = parseFloat(curr);
+        if (index === original.length - 1) {
+          return (acc + parsedCurrent) / original.length;
+        }
+        return acc + parsedCurrent;
+      }, 0);
+    callback(usage);
+  });
+
+  cmd.stderr.once("data", () => {
+    callback(null);
+  });
+}
+
 function asynchronize(candidate, errorMessage) {
   return (...args) =>
     new Promise((resolve, reject) => {
@@ -179,4 +205,6 @@ module.exports = {
     getClockFrequency,
     "Failed to read clock frequency",
   ),
+  getCPUUsage,
+  getCPUUsageAsync: asynchronize(getCPUUsage, "Failed to read CPU usage"),
 };
