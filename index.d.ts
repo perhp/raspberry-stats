@@ -132,3 +132,15 @@ export function getClockFrequency(
  * @returns A Promise that resolves with the frequency, or rejects on error.
  */
 export function getClockFrequencyAsync(clock: Clock): Promise<number | null>;
+
+/**
+ * Reads CPU usage by running `top`.
+ * @param callback Callback with the CPU usage in %, or `null` on error.
+ */
+export function getCPUUsage(callback: (usage: number | null) => void): void;
+
+/**
+ * Asynchronous version of `getCPUUsage`.
+ * @returns A Promise that resolves with the CPU usage in %, or rejects on error.
+ */
+export function getCPUUsageAsync(): Promise<number>;
