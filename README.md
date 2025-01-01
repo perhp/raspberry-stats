@@ -305,6 +305,8 @@ enum Clock {
   Asynchronous/promise-based version of the above function.  
   Resolves with the uptime in milliseconds, or rejects if an error occurred.
 
+> **Note:** The uptime is returned in milliseconds but is based on the system's uptime in seconds.
+
 ---
 
 ## Error Handling
