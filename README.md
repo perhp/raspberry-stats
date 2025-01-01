@@ -22,6 +22,7 @@ Synchronous (callback-based) and asynchronous (promise-based) APIs are provided 
     - [getClockFrequencies / getClockFrequenciesAsync](#getclockfrequencies--getclockfrequenciesasync)
     - [getClockFrequency / getClockFrequencyAsync](#getclockfrequency--getclockfrequencyasync)
     - [getCPUUsage / getCPUUsageAsync](#getcpuusage--getcpuusageasync)
+    - [getUptime / getUptimeAsync](#getuptime--getuptimeasync)
   - [Error Handling](#error-handling)
   - [License](#license)
 
@@ -284,6 +285,25 @@ enum Clock {
 - **description**  
   Asynchronous/promise-based version of the above function.  
   Resolves with the CPU usage, or rejects if an error occurred.
+
+---
+
+### getUptime / getUptimeAsync
+
+**Signature (Callback):**
+`getUptime(callback: (uptime: number | null) => void): void;`
+
+- **description**  
+  Reads the system uptime by running `awk '{print $1 * 1000}' /proc/uptime`.
+- **callback**
+  Called with the uptime in milliseconds or `null` if an error occurred.
+
+**Signature (Async):**
+`getUptimeAsync(): Promise<number>;`
+
+- **description**  
+  Asynchronous/promise-based version of the above function.  
+  Resolves with the uptime in milliseconds, or rejects if an error occurred.
 
 ---
 

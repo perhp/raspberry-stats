@@ -24,4 +24,8 @@ const stats = require("./index.js");
   // stats.getCPUUsage(console.log);
   // const cpu = await stats.getCPUUsageAsync();
   // console.log(cpu);
+  // ---
+  // stats.getUptime(console.log);
+  // const uptime = await stats.getUptimeAsync();
+  // console.log(uptime);
 })();

@@ -144,3 +144,15 @@ export function getCPUUsage(callback: (usage: number | null) => void): void;
  * @returns A Promise that resolves with the CPU usage in %, or rejects on error.
  */
 export function getCPUUsageAsync(): Promise<number>;
+
+/**
+ * Reads uptime by running `awk '{print $1 * 1000}' /proc/uptime`.
+ * @param callback Callback with the uptime in milliseconds, or `null` on error.
+ */
+export function getUptime(callback: (uptime: number | null) => void): void;
+
+/**
+ * Asynchronous version of `getUptime`.
+ * @returns A Promise that resolves with the uptime in milliseconds, or rejects on error.
+ */
+export function getUptimeAsync(): Promise<number>;

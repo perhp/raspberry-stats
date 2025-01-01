@@ -167,6 +167,18 @@ function getCPUUsage(callback) {
   });
 }
 
+function getUptime(callback) {
+  const cmd = spawn("awk '{print $1 * 1000}' /proc/uptime");
+
+  cmd.stdout.once("data", (data) => {
+    callback(parseInt(data.toString("utf8")));
+  });
+
+  cmd.stderr.once("data", () => {
+    callback(null);
+  });
+}
+
 function asynchronize(candidate, errorMessage) {
   return (...args) =>
     new Promise((resolve, reject) => {
@@ -207,4 +219,6 @@ module.exports = {
   ),
   getCPUUsage,
   getCPUUsageAsync: asynchronize(getCPUUsage, "Failed to read CPU usage"),
+  getUptime,
+  getUptimeAsync: asynchronize(getUptime, "Failed to read uptime"),
 };
