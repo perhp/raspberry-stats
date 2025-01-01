@@ -168,7 +168,7 @@ function getCPUUsage(callback) {
 }
 
 function getUptime(callback) {
-  const cmd = spawn("awk '{print $1 * 1000}' /proc/uptime");
+  const cmd = spawn("awk", ["{print $1*1000}", "/proc/uptime"]);
 
   cmd.stdout.once("data", (data) => {
     callback(parseInt(data.toString("utf8")));
