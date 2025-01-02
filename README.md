@@ -16,12 +16,12 @@ Synchronous (callback-based) and asynchronous (promise-based) APIs are provided 
   - [Usage](#usage)
   - [API](#api)
     - [getCPUTemperature / getCPUTemperatureAsync](#getcputemperature--getcputemperatureasync)
+    - [getCPUUsage / getCPUUsageAsync](#getcpuusage--getcpuusageasync)
     - [getMemoryUsage / getMemoryUsageAsync](#getmemoryusage--getmemoryusageasync)
     - [getDiskUsage / getDiskUsageAsync](#getdiskusage--getdiskusageasync)
     - [getVoltage / getVoltageAsync](#getvoltage--getvoltageasync)
     - [getClockFrequencies / getClockFrequenciesAsync](#getclockfrequencies--getclockfrequenciesasync)
     - [getClockFrequency / getClockFrequencyAsync](#getclockfrequency--getclockfrequencyasync)
-    - [getCPUUsage / getCPUUsageAsync](#getcpuusage--getcpuusageasync)
     - [getUptime / getUptimeAsync](#getuptime--getuptimeasync)
   - [Error Handling](#error-handling)
   - [License](#license)
@@ -117,6 +117,25 @@ getMemoryUsage((memoryUsage) => {
 - **description**  
   Asynchronous/promise-based version of the above function.  
   Resolves with the CPU temperature in °C, or rejects if an error occurred.
+
+---
+
+### getCPUUsage / getCPUUsageAsync
+
+**Signature (Callback):**  
+`getCPUUsage(callback: (usage: number | null) => void): void;`
+
+- **description**  
+  Runs `top` repeatedly (in this example, 10 iterations at 0.1-second intervals) and gathers the CPU usage values. It uses `grep` and `awk` to parse the CPU usage, calculates an average from the collected samples, and then invokes the callback with the final usage percentage (e.g., 17.2 for ~17.2% usage). If an error occurs, it invokes the callback with `null`.
+- **callback**  
+  Called with the CPU usage or `null` if an error occurred.
+
+**Signature (Async):**  
+`getCPUUsageAsync(): Promise<number>;`
+
+- **description**  
+  Asynchronous/promise-based version of the above function.  
+  Resolves with the CPU usage, or rejects if an error occurred.
 
 ---
 
@@ -266,25 +285,6 @@ enum Clock {
 - **description**  
   Asynchronous/promise-based version of the above function.  
   Resolves with the frequency, or rejects if an error occurred.
-
----
-
-### getCPUUsage / getCPUUsageAsync
-
-**Signature (Callback):**  
-`getCPUUsage(callback: (usage: number | null) => void): void;`
-
-- **description**  
-  Runs `top` repeatedly (in this example, 10 iterations at 0.1-second intervals) and gathers the CPU usage values. It uses `grep` and `awk` to parse the CPU usage, calculates an average from the collected samples, and then invokes the callback with the final usage percentage (e.g., 17.2 for ~17.2% usage). If an error occurs, it invokes the callback with `null`.
-- **callback**  
-  Called with the CPU usage or `null` if an error occurred.
-
-**Signature (Async):**  
-`getCPUUsageAsync(): Promise<number>;`
-
-- **description**  
-  Asynchronous/promise-based version of the above function.  
-  Resolves with the CPU usage, or rejects if an error occurred.
 
 ---
 
