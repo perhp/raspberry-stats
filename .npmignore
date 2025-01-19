@@ -1,2 +1,3 @@
 .prettierrc
-debug.js
+tsconfig.json
+src/

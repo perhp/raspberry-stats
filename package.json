@@ -1,10 +1,11 @@
 {
   "name": "raspberry-stats",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "description": "A lightweight Node.js utility for gathering essential performance metrics from your Raspberry Pi—such as CPU temperature, memory usage, and more.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
   "author": "Per Hansen",
   "license": "ISC",
@@ -23,10 +24,9 @@
     "url": "https://github.com/perhp/raspberry-stats.git"
   },
   "homepage": "https://github.com/perhp/raspberry-stats#readme",
-  "engines": {
-    "node": ">=12.0.0"
-  },
   "devDependencies": {
-    "prettier": "3.4.2"
+    "prettier": "3.4.2",
+    "typescript": "5.7.3",
+    "@types/node": "22.10.7"
   }
 }
