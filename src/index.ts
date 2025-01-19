@@ -25,6 +25,24 @@ export interface DiskUsageResult {
 }
 
 /**
+ * Available clocks
+ */
+export enum Clock {
+  ARM = "arm",
+  CORE = "core",
+  H264 = "h264",
+  ISP = "isp",
+  V3D = "v3d",
+  UART = "uart",
+  PWM = "pwm",
+  EMMC = "emmc",
+  PIXEL = "pixel",
+  VEC = "vec",
+  HDMI = "hdmi",
+  DPI = "dpi",
+}
+
+/**
  * Clock frequency structure
  */
 export interface ClockFrequencyResult {
@@ -150,19 +168,19 @@ export function getVoltage(callback: (voltage: number | null) => void): void {
 export function getClockFrequencies(
   callback: (clocks: ClockFrequencyResult[] | null) => void,
 ): void {
-  const clockNames = [
-    "arm",
-    "core",
-    "h264",
-    "isp",
-    "v3d",
-    "uart",
-    "pwm",
-    "emmc",
-    "pixel",
-    "vec",
-    "hdmi",
-    "dpi",
+  const clockNames: Clock[] = [
+    Clock.ARM,
+    Clock.CORE,
+    Clock.H264,
+    Clock.ISP,
+    Clock.V3D,
+    Clock.UART,
+    Clock.PWM,
+    Clock.EMMC,
+    Clock.PIXEL,
+    Clock.VEC,
+    Clock.HDMI,
+    Clock.DPI,
   ];
 
   let results: ClockFrequencyResult[] = [];
@@ -196,7 +214,7 @@ export function getClockFrequencies(
  * @param callback A function that receives the clock frequency or null if an error occurred.
  */
 export function getClockFrequency(
-  clock: string,
+  clock: Clock,
   callback: (frequency: number | null) => void,
 ): void {
   const cmd = spawn("/usr/bin/vcgencmd", ["measure_clock", clock]);

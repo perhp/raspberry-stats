@@ -52,19 +52,19 @@ With [bun](https://bun.sh/):
 
 Example using both callback-based and async/await methods:
 
-```js
-const {
+```ts
+import {
   getCPUTemperature,
   getCPUTemperatureAsync,
   getMemoryUsage,
   getMemoryUsageAsync,
-} = require("raspberry-stats");
+} from "raspberry-stats";
 
 // --- Using callback-based methods ---
 
 // Example 1: CPU Temperature
 getCPUTemperature((temperature) => {
-  if (temp !== null) {
+  if (temperature !== null) {
     console.log(`CPU Temperature: ${temperature}°C`);
   } else {
     console.error("Failed to retrieve CPU temperature");
@@ -232,7 +232,7 @@ Where `ClockFrequency` is an object of the following shape:
 ```ts
 interface ClockFrequency {
   clock: string;
-  frequency: number; // in Hz
+  frequency: number | null; // in Hz
 }
 ```
 
@@ -316,7 +316,7 @@ For the async/await methods, an `Error` is thrown with a descriptive message.
 
 **Example**:
 
-```js
+```ts
 try {
   const temp = await getCPUTemperatureAsync();
   console.log(`CPU Temperature: ${temp}°C`);
