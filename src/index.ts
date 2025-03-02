@@ -1,6 +1,14 @@
 import { spawn } from "child_process";
 
 /**
+ * Generic return type for all system queries
+ */
+export interface SystemInfo<T> {
+  error: string | null;
+  data: T | null;
+}
+
+/**
  * Memory usage structure
  */
 export interface MemoryUsageResult {
@@ -52,30 +60,36 @@ export interface ClockFrequencyResult {
 
 /**
  * Retrieves the CPU temperature.
- * @param callback A function that receives the CPU temperature or null if an error occurred.
+ * @param callback A function that receives { data, error }, where `data` is the CPU temperature or null.
  */
 export function getCPUTemperature(
-  callback: (temp: number | null) => void,
+  callback: (response: SystemInfo<number>) => void,
 ): void {
   const regex = /temp=([^'C]+)/;
   const cmd = spawn("/usr/bin/vcgencmd", ["measure_temp"]);
 
   cmd.stdout.once("data", (data) => {
     const match = data.toString("utf8").match(regex);
-    callback(match ? parseFloat(match[1]) : null);
+    callback({
+      data: match ? parseFloat(match[1]) : null,
+      error: match ? null : "Failed to parse CPU temperature",
+    });
   });
 
   cmd.stderr.once("data", () => {
-    callback(null);
+    callback({
+      data: null,
+      error: "Failed to read CPU temperature",
+    });
   });
 }
 
 /**
  * Retrieves the memory usage.
- * @param callback A function that receives the memory usage results or null if an error occurred.
+ * @param callback A function that receives { data, error }, where `data` is the MemoryUsageResult or null.
  */
 export function getMemoryUsage(
-  callback: (usage: MemoryUsageResult | null) => void,
+  callback: (response: SystemInfo<MemoryUsageResult>) => void,
 ): void {
   const cmd = spawn("free");
 
@@ -84,7 +98,10 @@ export function getMemoryUsage(
     // The second line typically has the memory usage
     const memLine = lines[1];
     if (!memLine) {
-      callback(null);
+      callback({
+        data: null,
+        error: "Unable to parse memory usage",
+      });
       return;
     }
 
@@ -93,20 +110,33 @@ export function getMemoryUsage(
       .splice(1)
       .map((usage: string) => parseFloat(usage));
 
-    callback({ total, used, free, shared, buffCache, available });
+    callback({
+      data: {
+        total,
+        used,
+        free,
+        shared,
+        buffCache,
+        available,
+      },
+      error: null,
+    });
   });
 
   cmd.stderr.once("data", () => {
-    callback(null);
+    callback({
+      data: null,
+      error: "Failed to read memory usage",
+    });
   });
 }
 
 /**
  * Retrieves the disk usage.
- * @param callback A function that receives an array of disk usage results or null if an error occurred.
+ * @param callback A function that receives { data, error }, where `data` is an array of DiskUsageResult or null.
  */
 export function getDiskUsage(
-  callback: (usage: DiskUsageResult[] | null) => void,
+  callback: (response: SystemInfo<DiskUsageResult[]>) => void,
 ): void {
   const cmd = spawn("df");
 
@@ -114,6 +144,14 @@ export function getDiskUsage(
     const lines = data.toString("utf8").split("\n").filter(Boolean);
     // The first line is headers, so skip it
     const usageLines = lines.splice(1);
+
+    if (!usageLines.length) {
+      callback({
+        data: null,
+        error: "No disk usage data found",
+      });
+      return;
+    }
 
     const results = usageLines.map((usageText: string) => {
       const [
@@ -135,38 +173,52 @@ export function getDiskUsage(
       };
     });
 
-    callback(results);
+    callback({
+      data: results,
+      error: null,
+    });
   });
 
   cmd.stderr.once("data", () => {
-    callback(null);
+    callback({
+      data: null,
+      error: "Failed to read disk usage",
+    });
   });
 }
 
 /**
  * Retrieves the voltage.
- * @param callback A function that receives the voltage or null if an error occurred.
+ * @param callback A function that receives { data, error }, where `data` is the voltage or null.
  */
-export function getVoltage(callback: (voltage: number | null) => void): void {
+export function getVoltage(
+  callback: (response: SystemInfo<number>) => void,
+): void {
   const regex = /volt=([^V]+)/;
   const cmd = spawn("/usr/bin/vcgencmd", ["measure_volts"]);
 
   cmd.stdout.once("data", (data) => {
     const match = data.toString("utf8").match(regex);
-    callback(match ? parseFloat(match[1]) : null);
+    callback({
+      data: match ? parseFloat(match[1]) : null,
+      error: match ? null : "Failed to parse voltage",
+    });
   });
 
   cmd.stderr.once("data", () => {
-    callback(null);
+    callback({
+      data: null,
+      error: "Failed to read voltage",
+    });
   });
 }
 
 /**
  * Retrieves all clock frequencies.
- * @param callback A function that receives an array of clock-frequency objects or null if an error occurred.
+ * @param callback A function that receives { data, error }, where `data` is an array of ClockFrequencyResult or null.
  */
 export function getClockFrequencies(
-  callback: (clocks: ClockFrequencyResult[] | null) => void,
+  callback: (response: SystemInfo<ClockFrequencyResult[]>) => void,
 ): void {
   const clockNames: Clock[] = [
     Clock.ARM,
@@ -183,15 +235,23 @@ export function getClockFrequencies(
     Clock.DPI,
   ];
 
-  let results: ClockFrequencyResult[] = [];
+  const results: ClockFrequencyResult[] = [];
   let pending = clockNames.length;
+
+  if (!pending) {
+    callback({
+      data: null,
+      error: "No clock names provided",
+    });
+    return;
+  }
 
   for (const clock of clockNames) {
     const cmd = spawn("/usr/bin/vcgencmd", ["measure_clock", clock]);
 
     cmd.stdout.once("data", (data) => {
       const match = data.toString("utf8").match(/frequency\(\d+\)=(\d+)/);
-      const frequency = match ? parseInt(match[1]) : 0;
+      const frequency = match ? parseInt(match[1]) : null;
       results.push({ clock, frequency });
     });
 
@@ -202,7 +262,10 @@ export function getClockFrequencies(
     cmd.on("close", () => {
       pending--;
       if (pending === 0) {
-        callback(results);
+        callback({
+          data: results,
+          error: null,
+        });
       }
     });
   }
@@ -211,30 +274,38 @@ export function getClockFrequencies(
 /**
  * Retrieves a specific clock frequency.
  * @param clock Name of the clock to measure.
- * @param callback A function that receives the clock frequency or null if an error occurred.
+ * @param callback A function that receives { data, error }, where `data` is the clock frequency or null.
  */
 export function getClockFrequency(
   clock: Clock,
-  callback: (frequency: number | null) => void,
+  callback: (response: SystemInfo<number>) => void,
 ): void {
   const cmd = spawn("/usr/bin/vcgencmd", ["measure_clock", clock]);
 
   cmd.stdout.once("data", (data) => {
     const match = data.toString("utf8").match(/frequency\(\d+\)=(\d+)/);
-    const frequency = match ? parseInt(match[1]) : 0;
-    callback(frequency);
+    const frequency = match ? parseInt(match[1]) : null;
+    callback({
+      data: frequency,
+      error: match ? null : `Failed to parse clock frequency for ${clock}`,
+    });
   });
 
   cmd.stderr.once("data", () => {
-    callback(null);
+    callback({
+      data: null,
+      error: `Failed to read clock frequency for ${clock}`,
+    });
   });
 }
 
 /**
  * Retrieves the CPU usage by analyzing the "Cpu(s)" line from the `top` command.
- * @param callback A function that receives the CPU usage percentage or null if an error occurred.
+ * @param callback A function that receives { data, error }, where `data` is the CPU usage percentage or null.
  */
-export function getCPUUsage(callback: (usage: number | null) => void): void {
+export function getCPUUsage(
+  callback: (response: SystemInfo<number>) => void,
+): void {
   const cmd = spawn("bash", [
     "-c",
     `top -bn10 -d 0.1 | grep "Cpu(s)" | awk '{ print 100 - $8 }'`,
@@ -243,7 +314,10 @@ export function getCPUUsage(callback: (usage: number | null) => void): void {
   cmd.stdout.once("data", (data) => {
     const lines = data.toString("utf8").split("\n").filter(Boolean);
     if (!lines.length) {
-      callback(null);
+      callback({
+        data: null,
+        error: "No CPU usage data retrieved",
+      });
       return;
     }
 
@@ -258,83 +332,70 @@ export function getCPUUsage(callback: (usage: number | null) => void): void {
       0,
     );
 
-    callback(usage);
+    callback({
+      data: usage,
+      error: null,
+    });
   });
 
   cmd.stderr.once("data", () => {
-    callback(null);
+    callback({
+      data: null,
+      error: "Failed to read CPU usage",
+    });
   });
 }
 
 /**
  * Retrieves the system uptime in milliseconds.
- * @param callback A function that receives the uptime in milliseconds or null if an error occurred.
+ * @param callback A function that receives { data, error }, where `data` is the uptime in milliseconds or null.
  */
-export function getUptime(callback: (uptime: number | null) => void): void {
+export function getUptime(
+  callback: (response: SystemInfo<number>) => void,
+): void {
   // The `awk` command will multiply the first field by 1000 (making it ms).
   const cmd = spawn("awk", ["{print $1*1000}", "/proc/uptime"]);
 
   cmd.stdout.once("data", (data) => {
-    callback(parseInt(data.toString("utf8"), 10));
+    const uptime = parseInt(data.toString("utf8"), 10);
+    callback({
+      data: isNaN(uptime) ? null : uptime,
+      error: isNaN(uptime) ? "Failed to parse uptime" : null,
+    });
   });
 
   cmd.stderr.once("data", () => {
-    callback(null);
+    callback({
+      data: null,
+      error: "Failed to read uptime",
+    });
   });
 }
 
+/**
+ * Helper to convert a callback-based function into a Promise-based one,
+ * returning a Promise<SystemInfo<T>>.
+ */
 function asynchronize<T>(
-  candidate: (...args: any[]) => void,
-  errorMessage: string,
-): (...args: any[]) => Promise<T> {
+  func: (...args: any[]) => void,
+): (...args: any[]) => Promise<SystemInfo<T>> {
   return (...args: any[]) =>
-    new Promise<T>((resolve, reject) => {
-      candidate(...args, (value: T | null) => {
-        if (value === null) {
-          return reject(new Error(errorMessage));
-        }
-        resolve(value);
+    new Promise<SystemInfo<T>>((resolve) => {
+      // The last argument in our original calls is the callback
+      func(...args, (response: SystemInfo<T>) => {
+        resolve(response);
       });
     });
 }
 
 // Export asynchronous versions
-export const getCPUTemperatureAsync = asynchronize<number>(
-  getCPUTemperature,
-  "Failed to read CPU temperature",
-);
-
-export const getMemoryUsageAsync = asynchronize<MemoryUsageResult>(
-  getMemoryUsage,
-  "Failed to read memory usage",
-);
-
-export const getDiskUsageAsync = asynchronize<DiskUsageResult[]>(
-  getDiskUsage,
-  "Failed to read disk usage",
-);
-
-export const getVoltageAsync = asynchronize<number>(
-  getVoltage,
-  "Failed to read voltage",
-);
-
-export const getClockFrequenciesAsync = asynchronize<ClockFrequencyResult[]>(
-  getClockFrequencies,
-  "Failed to read clock frequencies",
-);
-
-export const getClockFrequencyAsync = asynchronize<number>(
-  getClockFrequency,
-  "Failed to read clock frequency",
-);
-
-export const getCPUUsageAsync = asynchronize<number>(
-  getCPUUsage,
-  "Failed to read CPU usage",
-);
-
-export const getUptimeAsync = asynchronize<number>(
-  getUptime,
-  "Failed to read uptime",
-);
+export const getCPUTemperatureAsync = asynchronize<number>(getCPUTemperature);
+export const getMemoryUsageAsync =
+  asynchronize<MemoryUsageResult>(getMemoryUsage);
+export const getDiskUsageAsync = asynchronize<DiskUsageResult[]>(getDiskUsage);
+export const getVoltageAsync = asynchronize<number>(getVoltage);
+export const getClockFrequenciesAsync =
+  asynchronize<ClockFrequencyResult[]>(getClockFrequencies);
+export const getClockFrequencyAsync = asynchronize<number>(getClockFrequency);
+export const getCPUUsageAsync = asynchronize<number>(getCPUUsage);
+export const getUptimeAsync = asynchronize<number>(getUptime);
