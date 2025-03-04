@@ -381,7 +381,6 @@ function asynchronize<T>(
 ): (...args: any[]) => Promise<SystemInfo<T>> {
   return (...args: any[]) =>
     new Promise<SystemInfo<T>>((resolve) => {
-      // The last argument in our original calls is the callback
       func(...args, (response: SystemInfo<T>) => {
         resolve(response);
       });

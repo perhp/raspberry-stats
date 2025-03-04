@@ -62,7 +62,7 @@ Example using both callback-based and async/await methods:
     } from "raspberry-stats";
 
     // --- Using callback-based methods ---
-    // Each callback now receives a SystemInfo<T> object containing { data, error }
+    // Each callback receives a SystemInfo<T> object containing { data, error }
 
     // Example 1: CPU Temperature
     getCPUTemperature((info) => {
@@ -113,7 +113,7 @@ Example using both callback-based and async/await methods:
 
 ### Return Format Overview
 
-All callback-based functions now receive a single parameter of type `SystemInfo<T>`:
+All callback-based functions receive a single parameter of type `SystemInfo<T>`:
 
     interface SystemInfo<T> {
       data: T | null;
