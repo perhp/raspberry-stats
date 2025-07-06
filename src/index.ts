@@ -59,6 +59,22 @@ export interface ClockFrequencyResult {
 }
 
 /**
+ * Utility to make sure a callback fires **once** no matter how many events occur
+ */
+function once<T>(
+  callback: (response: SystemInfo<T>) => void,
+): (data: T | null, error: string | null) => void {
+  let fired = false;
+  return (data, error) => {
+    if (fired) {
+      return;
+    }
+    fired = true;
+    callback({ data, error });
+  };
+}
+
+/**
  * Retrieves the CPU temperature.
  * @param callback A function that receives { data, error }, where `data` is the CPU temperature or null.
  */
@@ -68,26 +84,28 @@ export function getCPUTemperature(
   try {
     const regex = /temp=([^'C]+)/;
     const cmd = spawn("/usr/bin/vcgencmd", ["measure_temp"]);
+    const finish = once<number>(callback);
 
     cmd.stdout.once("data", (data) => {
       const match = data.toString("utf8").match(regex);
-      callback({
-        data: match ? parseFloat(match[1]) : null,
-        error: match ? null : "Failed to parse CPU temperature",
-      });
+      finish(
+        match ? parseFloat(match[1]) : null,
+        match ? null : "Failed to parse CPU temperature",
+      );
     });
 
-    cmd.stderr.once("data", () => {
-      callback({
-        data: null,
-        error: "Failed to read CPU temperature",
-      });
-    });
+    cmd.stderr.once("data", () =>
+      finish(null, "Failed to read CPU temperature"),
+    );
+
+    cmd.once("error", (err: NodeJS.ErrnoException) =>
+      finish(
+        null,
+        err.code === "ENOENT" ? "vcgencmd executable not found" : err.message,
+      ),
+    );
   } catch (e) {
-    callback({
-      data: null,
-      error: "Failed to read CPU temperature",
-    });
+    callback({ data: null, error: "Failed to read CPU temperature" });
   }
 }
 
@@ -100,16 +118,13 @@ export function getMemoryUsage(
 ): void {
   try {
     const cmd = spawn("free");
+    const finish = once<MemoryUsageResult>(callback);
 
     cmd.stdout.once("data", (data) => {
       const lines = data.toString("utf8").split("\n");
-      // The second line typically has the memory usage
       const memLine = lines[1];
       if (!memLine) {
-        callback({
-          data: null,
-          error: "Unable to parse memory usage",
-        });
+        finish(null, "Unable to parse memory usage");
         return;
       }
 
@@ -118,30 +133,14 @@ export function getMemoryUsage(
         .splice(1)
         .map((usage: string) => parseFloat(usage));
 
-      callback({
-        data: {
-          total,
-          used,
-          free,
-          shared,
-          buffCache,
-          available,
-        },
-        error: null,
-      });
+      finish({ total, used, free, shared, buffCache, available }, null);
     });
 
-    cmd.stderr.once("data", () => {
-      callback({
-        data: null,
-        error: "Failed to read memory usage",
-      });
-    });
+    cmd.stderr.once("data", () => finish(null, "Failed to read memory usage"));
+
+    cmd.once("error", (err) => finish(null, err.message));
   } catch (e) {
-    callback({
-      data: null,
-      error: "Failed to read memory usage",
-    });
+    callback({ data: null, error: "Failed to read memory usage" });
   }
 }
 
@@ -154,17 +153,14 @@ export function getDiskUsage(
 ): void {
   try {
     const cmd = spawn("df");
+    const finish = once<DiskUsageResult[]>(callback);
 
     cmd.stdout.once("data", (data) => {
       const lines = data.toString("utf8").split("\n").filter(Boolean);
-      // The first line is headers, so skip it
       const usageLines = lines.splice(1);
 
       if (!usageLines.length) {
-        callback({
-          data: null,
-          error: "No disk usage data found",
-        });
+        finish(null, "No disk usage data found");
         return;
       }
 
@@ -188,23 +184,14 @@ export function getDiskUsage(
         };
       });
 
-      callback({
-        data: results,
-        error: null,
-      });
+      finish(results, null);
     });
 
-    cmd.stderr.once("data", () => {
-      callback({
-        data: null,
-        error: "Failed to read disk usage",
-      });
-    });
+    cmd.stderr.once("data", () => finish(null, "Failed to read disk usage"));
+
+    cmd.once("error", (err) => finish(null, err.message));
   } catch (e) {
-    callback({
-      data: null,
-      error: "Failed to read disk usage",
-    });
+    callback({ data: null, error: "Failed to read disk usage" });
   }
 }
 
@@ -218,26 +205,26 @@ export function getVoltage(
   try {
     const regex = /volt=([^V]+)/;
     const cmd = spawn("/usr/bin/vcgencmd", ["measure_volts"]);
+    const finish = once<number>(callback);
 
     cmd.stdout.once("data", (data) => {
       const match = data.toString("utf8").match(regex);
-      callback({
-        data: match ? parseFloat(match[1]) : null,
-        error: match ? null : "Failed to parse voltage",
-      });
+      finish(
+        match ? parseFloat(match[1]) : null,
+        match ? null : "Failed to parse voltage",
+      );
     });
 
-    cmd.stderr.once("data", () => {
-      callback({
-        data: null,
-        error: "Failed to read voltage",
-      });
-    });
+    cmd.stderr.once("data", () => finish(null, "Failed to read voltage"));
+
+    cmd.once("error", (err: NodeJS.ErrnoException) =>
+      finish(
+        null,
+        err.code === "ENOENT" ? "vcgencmd executable not found" : err.message,
+      ),
+    );
   } catch (e) {
-    callback({
-      data: null,
-      error: "Failed to read voltage",
-    });
+    callback({ data: null, error: "Failed to read voltage" });
   }
 }
 
@@ -268,41 +255,38 @@ export function getClockFrequencies(
     let pending = clockNames.length;
 
     if (!pending) {
-      callback({
-        data: null,
-        error: "No clock names provided",
-      });
+      callback({ data: null, error: "No clock names provided" });
       return;
     }
 
+    const tryFinish = () => {
+      if (--pending === 0) {
+        callback({ data: results, error: null });
+      }
+    };
+
     for (const clock of clockNames) {
       const cmd = spawn("/usr/bin/vcgencmd", ["measure_clock", clock]);
+      let handled = false;
+
+      const record = (frequency: number | null) => {
+        if (handled) return;
+        handled = true;
+        results.push({ clock, frequency });
+        tryFinish();
+      };
 
       cmd.stdout.once("data", (data) => {
         const match = data.toString("utf8").match(/frequency\(\d+\)=(\d+)/);
-        const frequency = match ? parseInt(match[1]) : null;
-        results.push({ clock, frequency });
+        record(match ? parseInt(match[1]) : null);
       });
 
-      cmd.stderr.once("data", () => {
-        results.push({ clock, frequency: null });
-      });
+      cmd.stderr.once("data", () => record(null));
 
-      cmd.on("close", () => {
-        pending--;
-        if (pending === 0) {
-          callback({
-            data: results,
-            error: null,
-          });
-        }
-      });
+      cmd.once("error", () => record(null));
     }
   } catch (e) {
-    callback({
-      data: null,
-      error: "Failed to read clock frequencies",
-    });
+    callback({ data: null, error: "Failed to read clock frequencies" });
   }
 }
 
@@ -317,27 +301,28 @@ export function getClockFrequency(
 ): void {
   try {
     const cmd = spawn("/usr/bin/vcgencmd", ["measure_clock", clock]);
+    const finish = once<number>(callback);
 
     cmd.stdout.once("data", (data) => {
       const match = data.toString("utf8").match(/frequency\(\d+\)=(\d+)/);
-      const frequency = match ? parseInt(match[1]) : null;
-      callback({
-        data: frequency,
-        error: match ? null : `Failed to parse clock frequency for ${clock}`,
-      });
+      finish(
+        match ? parseInt(match[1]) : null,
+        match ? null : `Failed to parse clock frequency for ${clock}`,
+      );
     });
 
-    cmd.stderr.once("data", () => {
-      callback({
-        data: null,
-        error: `Failed to read clock frequency for ${clock}`,
-      });
-    });
+    cmd.stderr.once("data", () =>
+      finish(null, `Failed to read clock frequency for ${clock}`),
+    );
+
+    cmd.once("error", (err: NodeJS.ErrnoException) =>
+      finish(
+        null,
+        err.code === "ENOENT" ? "vcgencmd executable not found" : err.message,
+      ),
+    );
   } catch (e) {
-    callback({
-      data: null,
-      error: "Failed to read clock frequency",
-    });
+    callback({ data: null, error: "Failed to read clock frequency" });
   }
 }
 
@@ -353,14 +338,12 @@ export function getCPUUsage(
       "-c",
       `top -bn10 -d 0.1 | grep "Cpu(s)" | awk '{ print 100 - $8 }'`,
     ]);
+    const finish = once<number>(callback);
 
     cmd.stdout.once("data", (data) => {
       const lines = data.toString("utf8").split("\n").filter(Boolean);
       if (!lines.length) {
-        callback({
-          data: null,
-          error: "No CPU usage data retrieved",
-        });
+        finish(null, "No CPU usage data retrieved");
         return;
       }
 
@@ -375,23 +358,14 @@ export function getCPUUsage(
         0,
       );
 
-      callback({
-        data: usage,
-        error: null,
-      });
+      finish(usage, null);
     });
 
-    cmd.stderr.once("data", () => {
-      callback({
-        data: null,
-        error: "Failed to read CPU usage",
-      });
-    });
+    cmd.stderr.once("data", () => finish(null, "Failed to read CPU usage"));
+
+    cmd.once("error", (err) => finish(null, err.message));
   } catch (e) {
-    callback({
-      data: null,
-      error: "Failed to read CPU usage",
-    });
+    callback({ data: null, error: "Failed to read CPU usage" });
   }
 }
 
@@ -403,28 +377,22 @@ export function getUptime(
   callback: (response: SystemInfo<number>) => void,
 ): void {
   try {
-    // The `awk` command will multiply the first field by 1000 (making it ms).
     const cmd = spawn("awk", ["{print $1*1000}", "/proc/uptime"]);
+    const finish = once<number>(callback);
 
     cmd.stdout.once("data", (data) => {
       const uptime = parseInt(data.toString("utf8"), 10);
-      callback({
-        data: isNaN(uptime) ? null : uptime,
-        error: isNaN(uptime) ? "Failed to parse uptime" : null,
-      });
+      finish(
+        isNaN(uptime) ? null : uptime,
+        isNaN(uptime) ? "Failed to parse uptime" : null,
+      );
     });
 
-    cmd.stderr.once("data", () => {
-      callback({
-        data: null,
-        error: "Failed to read uptime",
-      });
-    });
+    cmd.stderr.once("data", () => finish(null, "Failed to read uptime"));
+
+    cmd.once("error", (err) => finish(null, err.message));
   } catch (e) {
-    callback({
-      data: null,
-      error: "Failed to read uptime",
-    });
+    callback({ data: null, error: "Failed to read uptime" });
   }
 }
 
@@ -437,9 +405,7 @@ function asynchronize<T>(
 ): (...args: any[]) => Promise<SystemInfo<T>> {
   return (...args: any[]) =>
     new Promise<SystemInfo<T>>((resolve) => {
-      func(...args, (response: SystemInfo<T>) => {
-        resolve(response);
-      });
+      func(...args, (response: SystemInfo<T>) => resolve(response));
     });
 }
 
